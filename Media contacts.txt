@@ -1,0 +1,378 @@
+
+import React, { useEffect, useState } from "react";
+import { AvForm, AvField } from "availity-reactstrap-validation";
+import { Row, Button, Label } from "reactstrap";
+import "suneditor/dist/css/suneditor.min.css";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+const MediaContacts = () => {
+
+    const [isUpdateMediaContacts, setIsUpdateMediaContacts] = useState(false);
+    const [fields, setFields] = useState([{ value: null }]);
+    const [arrData, setArrData] = useState([]);
+    const [mediaFieldId, setMediaFieldId] = useState();
+    const [mediaDataLength, setMediaDataLength] = useState(0);
+    const [tempLength, setTempLength] = useState(0)
+
+    useEffect(() => {
+        getAllMediaContacts()
+    }, []);
+
+    const getAllMediaContacts = async () => {
+        try {
+            const userToken = localStorage.getItem("token")
+            const response = await fetch("http://103.163.58.156:4169/api/contact/all_media_contacts", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${userToken}`
+                }
+            })
+            const responseJson = await response.json();
+            setFields(responseJson.data)
+            setMediaDataLength(responseJson.data.length)
+            setTempLength(responseJson.data.length)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const onUpdateProfile = async () => {
+
+        const userToken = localStorage.getItem("token")
+        let errFlag = true;
+
+        if (isUpdateMediaContacts) {
+            let updateData = [];
+            for (var i = 0; i < tempLength; i++) {
+                var data = {};
+                if (($(`#first_name${i}`).val() != '' && $(`#first_name${i}`).val() != undefined) &&
+                    ($(`#last_name${i}`).val() != '' && $(`#last_name${i}`).val() != undefined) &&
+                    ($(`#media_company_name${i}`).val() != '' && $(`#media_company_name${i}`).val() != undefined) &&
+                    ($(`#media_designation${i}`).val() != '' && $(`#media_designation${i}`).val() != undefined) &&
+                    ($(`#phone${i}`).val() != '' && $(`#phone${i}`).val() != undefined) &&
+                    ($(`#media_email${i}`).val() != '' && $(`#media_email${i}`).val() != undefined)) {
+                    data.id = fields[i].id
+                    data.first_name = document.getElementById(`first_name${i}`).value;
+                    data.last_name = document.getElementById(`last_name${i}`).value;
+                    data.media_company_name = document.getElementById(`media_company_name${i}`).value;
+                    data.media_designation = document.getElementById(`media_designation${i}`).value;
+                    data.phone = document.getElementById(`phone${i}`).value;
+                    data.media_email = document.getElementById(`media_email${i}`).value;
+                    updateData.push(data);
+                } else {
+                    toast("Please enter all the fields")
+                    errFlag = false
+                }
+            }
+            if (errFlag) {
+                updateMediaContact(userToken, updateData);
+            }
+        }
+        for (var i = tempLength; i < mediaDataLength; i++) {
+            var data = {};
+            if (($(`#first_name${i}`).val() != '' && $(`#first_name${i}`).val() != undefined) &&
+                ($(`#last_name${i}`).val() != '' && $(`#last_name${i}`).val() != undefined) &&
+                ($(`#media_company_name${i}`).val() != '' && $(`#media_company_name${i}`).val() != undefined) &&
+                ($(`#media_designation${i}`).val() != '' && $(`#media_designation${i}`).val() != undefined) &&
+                ($(`#phone${i}`).val() != '' && $(`#phone${i}`).val() != undefined) &&
+                ($(`#media_email${i}`).val() != '' && $(`#media_email${i}`).val() != undefined)) {
+                data.first_name = document.getElementById(`first_name${i}`).value;
+                data.last_name = document.getElementById(`last_name${i}`).value;
+                data.media_company_name = document.getElementById(`media_company_name${i}`).value;
+                data.media_designation = document.getElementById(`media_designation${i}`).value;
+                data.phone = document.getElementById(`phone${i}`).value;
+                data.media_email = document.getElementById(`media_email${i}`).value;
+                arrData.push(data);
+
+            } else {
+                toast("Please enter all the fields")
+                errFlag = false
+            }
+        }
+
+        if (errFlag) {
+            addMediaContact(userToken);
+        }
+    }
+
+    const addMediaContactHandler = async (value, userToken) => {
+        try {
+            const fd = new FormData();
+
+            fd.append("first_name", value.first_name)
+            fd.append("last_name", value.last_name)
+            fd.append("media_company_name", value.media_company_name)
+            fd.append("media_designation", value.media_designation)
+            fd.append("media_email", value.media_email)
+            fd.append("phone", value.phone)
+
+            const submitMediaRes = await fetch("http://103.163.58.156:4169/api/contact/add-media-contact", {
+                method: "POST",
+                body: fd,
+                headers: {
+                    Authorization: `Bearer ${userToken}`
+                }
+            })
+            const submitMediaResJson = await submitMediaRes.json()
+            toast(submitMediaResJson.message)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const addMediaContact = async (userToken) => {
+        try {
+            arrData.map(async (value) => {
+                await addMediaContactHandler(value, userToken);
+            })
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const updateMediaContactHandler = async (value, userToken) => {
+        try {
+            const fd = new FormData();
+
+            fd.append("first_name", value.first_name)
+            fd.append("last_name", value.last_name)
+            fd.append("media_company_name", value.media_company_name)
+            fd.append("media_designation", value.media_designation)
+            fd.append("media_email", value.media_email)
+            fd.append("phone", value.phone)
+
+            try {
+                const updateMediaRes = await fetch("http://103.163.58.156:4169/api/contact/update-media-contact/" + value.id, {
+                    method: "POST",
+                    body: fd,
+                    headers: {
+                        Authorization: `Bearer ${userToken}`
+                    }
+                })
+                const updateMediaResJson = await updateMediaRes.json()
+                toast(updateMediaResJson.message)
+            } catch (error) {
+                console.log("error from update:::", error)
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const updateMediaContact = (userToken, updateData) => {
+        try {
+            updateData.map(async (value) => {
+                await updateMediaContactHandler(value, userToken);
+            })
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const removeMediaContact = async (id) => {
+        const userToken = localStorage.getItem("token")
+        try {
+            const deleteMediaContact = await fetch("http://103.163.58.156:4169/api/contact/delete_media_contacts/" + id, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${userToken}` }
+            })
+            const deleteMediaRes = await deleteMediaContact.json()
+            toast(deleteMediaRes.message)
+            getAllMediaContacts()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const handleAdd = (e) => {
+        e.target.classList.remove('btn-secondary');
+        const values = [...fields];
+        values.push({ value: null });
+        setFields(values);
+        setMediaDataLength(mediaDataLength + 1);
+    }
+
+    function handleRemove() {
+        const values = [...fields];
+        values.splice(mediaFieldId, 1);
+        setFields(values);
+        setMediaDataLength(mediaDataLength - 1);
+        const tempArr = fields
+        // const reversedArr = tempArr.reverse()
+        const id = fields[fields.length - 1].id
+        if (id !== undefined && id !== null && id !== "") {
+            removeMediaContact(id)
+        }
+    }
+
+    return (
+        <>
+            <div className="row">
+                <div className="col-lg-12">
+
+                    <div className="card" >
+                        <div className="card-body">
+                            <AvForm>
+                                <>
+                                    {fields?.map((field, idx) => {
+                                        return (
+                                            <div key={`${field}-${idx}`} style={{ borderBottom: "3px solid #ced4da", marginBottom: "40px" }}>
+                                                <Row>
+                                                    <div className="col-12 mb-3"></div>
+                                                    <div className="col-md-4 col-sm-6 mb-3">
+                                                        <Label>First name </Label>
+                                                        <AvField
+                                                            name="first_name"
+                                                            validate={{
+                                                                required: { value: true },
+                                                            }}
+                                                            type="text"
+                                                            errorMessage="Enter Fisrt Name"
+                                                            value={field.first_name}
+                                                            id={`first_name${idx}`}
+                                                            onChange={(e) => {
+                                                                if (idx <= tempLength - 1) {
+                                                                    setIsUpdateMediaContacts(true);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-4 col-sm-6 mb-3">
+                                                        <Label>Last name</Label>
+                                                        <AvField
+                                                            name="last_name"
+                                                            type="text"
+                                                            errorMessage="Enter Last Name"
+                                                            validate={{
+                                                                required: { value: true },
+                                                            }}
+                                                            value={field.last_name}
+                                                            id={`last_name${idx}`}
+                                                            onChange={(e) => {
+                                                                if (idx <= tempLength - 1) {
+                                                                    setIsUpdateMediaContacts(true);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="mb-3"></div>
+                                                    <div className="col-md-4 col-sm-6 mb-3">
+                                                        <Label>Company Name</Label>
+                                                        <AvField
+                                                            name="media_company_name"
+                                                            type="text"
+                                                            errorMessage="Enter Company Name"
+                                                            validate={{
+                                                                required: { value: true },
+                                                            }}
+                                                            value={field.media_company_name}
+                                                            id={`media_company_name${idx}`}
+                                                            onChange={(e) => {
+                                                                if (idx <= tempLength - 1) {
+                                                                    setIsUpdateMediaContacts(true);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-4 col-sm-6 mb-3">
+                                                        <Label>Designation</Label>
+                                                        <AvField
+                                                            name="media_designation"
+                                                            type="text"
+                                                            errorMessage="Enter Designation"
+                                                            validate={{
+                                                                required: { value: true },
+                                                            }}
+                                                            value={field.media_designation}
+                                                            id={`media_designation${idx}`}
+                                                            onChange={(e) => {
+                                                                if (idx <= tempLength - 1) {
+                                                                    setIsUpdateMediaContacts(true);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="mb-3"></div>
+                                                    <div className="col-md-4 col-sm-6 mb-3">
+                                                        <Label>Phone</Label>
+                                                        <AvField
+                                                            name="phone"
+                                                            type="text"
+                                                            value={field.phone}
+                                                            errorMessage="Enter Only Numbers"
+                                                            validate={{
+                                                                pattern: {
+                                                                    value: "^[0-9]+$",
+                                                                    errorMessage: "Only Numbers",
+                                                                },
+                                                            }}
+                                                            id={`phone${idx}`}
+                                                            onChange={(e) => {
+                                                                if (idx <= tempLength - 1) {
+                                                                    setIsUpdateMediaContacts(true);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-4 col-sm-6 mb-3">
+                                                        <Label>Email</Label>
+                                                        <AvField
+                                                            name="media_email"
+                                                            type="text"
+                                                            errorMessage="Enter Email"
+                                                            value={field.media_email}
+                                                            validate={{
+                                                                email: { value: true },
+                                                            }}
+                                                            id={`media_email${idx}`}
+                                                            onChange={(e) => {
+                                                                if (idx <= tempLength - 1) {
+                                                                    setIsUpdateMediaContacts(true);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </Row>
+                                            </div>
+                                        )
+                                    })}
+                                </>
+
+                                <div className="d-flex flex-wrap gap-2 mb-lg-5 mb-3px-3">
+                                    <Button
+                                        type="button"
+                                        className="btn-success lightGreenBgColor text-color-white fullwidth"
+                                        onClick={handleAdd}
+                                        style={{ borderRadius: "50px" }}
+                                    >
+                                        Add
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        className="btn-danger darkGrayBgColor text-color-white fullwidth "
+                                        color="secondary"
+                                        onClick={() => { handleRemove() }}
+                                        style={{ borderRadius: "50px" }}
+
+                                    >
+                                        Remove
+                                    </Button>
+                                    <Button
+                                        onClick={onUpdateProfile}
+                                        className="lightGreenBgColor text-color-white site-btn ml-4 btn btn-secondary"
+                                    >
+                                        Save
+                                    </Button>
+                                </div>
+                            </AvForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
+export default MediaContacts;
